@@ -1,6 +1,7 @@
 package libs.true123.cn.indicator;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v4.view.ViewPager;
@@ -16,6 +17,7 @@ import libs.true123.cn.indicator.base.PageIndicator;
 public abstract class AbstractIndicator extends View implements PageIndicator {
 
     ViewPager mViewPager;
+
     ViewPager.OnPageChangeListener mListener;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -68,5 +70,16 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
     @Override
     public void onPageScrollStateChanged(int state) {
 
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
     }
 }
