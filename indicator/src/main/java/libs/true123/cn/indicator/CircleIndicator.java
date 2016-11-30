@@ -6,7 +6,6 @@ import android.graphics.Paint;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
-import android.util.Log;
 
 /**
  * Created by junbo on 29/11/2016.
@@ -32,7 +31,6 @@ public class CircleIndicator extends AbstractIndicator {
 
     @Override
     protected void drawItem(Canvas canvas, Paint defaultIndicatorPaint, int left, int top, int right, int bottom) {
-        canvas.drawCircle(right -radius, bottom - radius, radius, defaultIndicatorPaint);
-        Log.i("indicator",""+left+";"+top+";"+right+";"+bottom);
+        canvas.drawCircle(right - mRadius, bottom - mRadius, mRadius, defaultIndicatorPaint);
     }
 }

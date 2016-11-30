@@ -18,4 +18,11 @@
         android:alpha="0.5"
         android:layout_gravity="bottom|center_horizontal"
         android:background="@color/blue" />
+    <libs.true123.cn.indicator.CircleIndicator
+        android:id="@+id/circleIndicator2"
+        android:layout_width="100dp"
+        android:layout_height="match_parent"
+        android:alpha="0.5"
+        android:layout_gravity="right"
+        android:background="@color/blue" />
 </FrameLayout>
