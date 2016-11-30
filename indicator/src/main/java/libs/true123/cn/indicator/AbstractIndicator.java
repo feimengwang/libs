@@ -59,6 +59,7 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
 
     public AbstractIndicator setOrientation(@HostTypeChecker int orientation) {
         mOrientation = orientation;
+        hasText = false;
         return this;
     }
 
@@ -68,7 +69,10 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
 
     }
 
-    public AbstractIndicator setHasText(boolean hasText) {
+    public AbstractIndicator setHasText(boolean hasText) throws Exception {
+        if(mOrientation==VERTICAL){
+            throw new Exception("The orientation is vertical, do not allow to set text!");
+        }
         this.hasText = hasText;
         return this;
     }
