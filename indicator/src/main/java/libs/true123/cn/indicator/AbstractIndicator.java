@@ -3,6 +3,7 @@ package libs.true123.cn.indicator;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Build;
 import android.os.Parcel;
@@ -12,6 +13,8 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import libs.true123.cn.indicator.base.PageIndicator;
+import libs.true123.cn.utils.DisplayUtil;
+import libs.true123.cn.utils.TextUtil;
 
 /**
  * Created by junbo on 25/11/2016.
@@ -70,7 +73,7 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
     }
 
     public AbstractIndicator setHasText(boolean hasText) throws Exception {
-        if(mOrientation==VERTICAL){
+        if (mOrientation == VERTICAL) {
             throw new Exception("The orientation is vertical, do not allow to set text!");
         }
         this.hasText = hasText;
@@ -212,8 +215,23 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
             top = (getMeasuredHeight() - (mRadius * 2 * count + mDistance * (count - 1))) / 2;
             left = (getMeasuredWidth() - 2 * mRadius) / 2;
         }
+        if (mOrientation == HORIZONTAL && hasText) {
+            left = getMeasuredWidth() - (2 * mRadius + mDistance) * (count + 1) - getPaddingRight();
+            drawText(canvas, left - getPaddingLeft());
+        }
         drawIndicator(canvas, top, left);
         drawMovingIndicator(canvas, top, left);
+    }
+
+    private void drawText(Canvas canvas, int length) {
+        CharSequence title = mViewPager.getAdapter().getPageTitle(position);
+        if (title != null && !"".equals(title.toString())) {
+            Paint p = new Paint();
+            p.setTextSize(DisplayUtil.sp2px(getContext(), 22));
+            p.setColor(Color.BLUE);
+            String sTitle = TextUtil.getClippedText(title.toString(), length, p);
+            canvas.drawText(sTitle, getPaddingLeft(), TextUtil.textBaseLine(p, getMeasuredHeight()), p);
+        }
     }
 
     private void drawMovingIndicator(Canvas canvas, int top, int left) {
@@ -224,7 +242,7 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
             } else {
                 top += distanceForFirst;
             }
-            drawItem(canvas, movingIndicatorPaint, left, top, left+2*mRadius, top+2*mRadius);
+            drawItem(canvas, movingIndicatorPaint, left, top, left + 2 * mRadius, top + 2 * mRadius);
         }
     }
 

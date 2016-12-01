@@ -31,6 +31,11 @@ public class MainActivity extends AppCompatActivity {
         circleIndicator = (CircleIndicator) findViewById(R.id.circleIndicator);
         circleIndicator2 = (CircleIndicator) findViewById(R.id.circleIndicator2);
         circleIndicator.setViewPager(viewPager);
+        try {
+            circleIndicator.setHasText(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         circleIndicator2.setViewPager(viewPager);
         circleIndicator2.setOrientation(PageIndicator.VERTICAL);
     }

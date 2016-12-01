@@ -11,6 +11,7 @@ import android.widget.ImageView;
 
 public class ViewPagerAdapter extends PagerAdapter {
     ImageView[] imgs;
+    String[] res = {"nihhhhhhhhhhhhhhhhhhhhhhhhhhh", "helloooooooo", "cacacaacaaca你你你你你你你", "我测试时是是是是是是我测试时是是是是是是"};
 
     public ViewPagerAdapter(ImageView[] imgs) {
         this.imgs = imgs;
@@ -25,9 +26,14 @@ public class ViewPagerAdapter extends PagerAdapter {
     }
 
     @Override
+    public CharSequence getPageTitle(int position) {
+        return res[position % res.length];
+    }
+
+    @Override
     public Object instantiateItem(ViewGroup container, int position) {
 
-            container.addView(imgs[position % imgs.length]);
+        container.addView(imgs[position % imgs.length]);
 
         return imgs[position % imgs.length];
     }
