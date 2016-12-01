@@ -29,8 +29,10 @@ public class MainActivity extends AppCompatActivity {
         viewPager = (ViewPager) findViewById(R.id.viewPager);
         viewPager.setAdapter(adapter);
         circleIndicator = (CircleIndicator) findViewById(R.id.circleIndicator);
+
         circleIndicator2 = (CircleIndicator) findViewById(R.id.circleIndicator2);
         circleIndicator.setViewPager(viewPager);
+        circleIndicator.setAuto(true);
         try {
             circleIndicator.setHasText(true);
         } catch (Exception e) {

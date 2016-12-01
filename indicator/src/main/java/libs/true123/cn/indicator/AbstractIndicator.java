@@ -6,11 +6,21 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+
+import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import libs.true123.cn.indicator.base.PageIndicator;
 import libs.true123.cn.utils.DisplayUtil;
@@ -36,8 +46,54 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
     float positionOffset = 0f;
 
     boolean mAuto = false;
+    boolean mPause = false;
     int mOrientation = HORIZONTAL;
     boolean hasText = false;
+
+    private Handler mHandler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            updatePosition();
+        }
+    };
+    private ScheduledExecutorService mScheduledExecutorService;
+    private OnTouchListener mOnTouchListener;
+
+    private void updatePosition() {
+        Log.i("run", "position=" + position);
+        if (mViewPager == null || mViewPager.getAdapter().getCount() <= 0) return;
+        position++;
+        if (position >= mViewPager.getAdapter().getCount()) {
+            position = 0;
+        }
+        Log.i("run", "position=" + position);
+        mViewPager.setCurrentItem(position);
+        invalidate();
+
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return true;
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        Log.i("run", "action=" + event.getAction());
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                mPause = true;
+                Log.i("run", "action1=" + mPause);
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                mPause = false;
+                Log.i("run", "action2=" + mPause);
+                break;
+        }
+        return super.dispatchTouchEvent(event);
+    }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public AbstractIndicator(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
@@ -68,8 +124,8 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
 
     public AbstractIndicator setAuto(boolean auto) {
         mAuto = auto;
+        startLoop();
         return this;
-
     }
 
     public AbstractIndicator setHasText(boolean hasText) throws Exception {
@@ -78,6 +134,20 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
         }
         this.hasText = hasText;
         return this;
+    }
+
+    private void startLoop() {
+        mScheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        mScheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                if (!mPause) {
+                    mHandler.obtainMessage().sendToTarget();
+                    Log.i("run", "" + new Date().toString());
+                }
+            }
+        }, 0, 3, TimeUnit.SECONDS);
+
     }
 
     private void init() {
@@ -104,8 +174,30 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
         }
         mViewPager = viewPager;
         mViewPager.addOnPageChangeListener(this);
+        mViewPager.setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                switch (motionEvent.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        mPause = true;
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        mPause = false;
+                        break;
+                }
+                if (mOnTouchListener != null && !mOnTouchListener.onTouch(view, motionEvent)) {
+                    return false;
+                }
+                return true;
+            }
+        });
         postInvalidate();
 
+    }
+
+    public void setViewPagerOnTouchListener(OnTouchListener listener) {
+        this.mOnTouchListener = listener;
     }
 
     @Override
@@ -259,6 +351,15 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
             } else {
                 top = bottom + mDistance;
             }
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        if (mScheduledExecutorService != null) {
+            mScheduledExecutorService.shutdown();
+            mScheduledExecutorService = null;
         }
     }
 
