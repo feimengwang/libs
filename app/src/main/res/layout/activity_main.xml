@@ -24,5 +24,6 @@
         android:layout_height="match_parent"
         android:alpha="0.5"
         android:layout_gravity="right"
+        android:visibility="gone"
         android:background="@color/blue" />
 </FrameLayout>

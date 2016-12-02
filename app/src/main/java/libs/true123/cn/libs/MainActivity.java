@@ -3,8 +3,11 @@ package libs.true123.cn.libs;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.Toast;
 
+import libs.true123.cn.indicator.AbstractIndicator;
 import libs.true123.cn.indicator.CircleIndicator;
 import libs.true123.cn.indicator.base.PageIndicator;
 
@@ -33,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
         circleIndicator2 = (CircleIndicator) findViewById(R.id.circleIndicator2);
         circleIndicator.setViewPager(viewPager);
         circleIndicator.setAuto(true);
+
         try {
             circleIndicator.setHasText(true);
         } catch (Exception e) {

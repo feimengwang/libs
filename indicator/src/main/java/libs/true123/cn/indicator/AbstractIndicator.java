@@ -53,24 +53,21 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
     private Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message msg) {
-            super.handleMessage(msg);
             updatePosition();
         }
     };
     private ScheduledExecutorService mScheduledExecutorService;
-    private OnTouchListener mOnTouchListener;
-
     private void updatePosition() {
-        Log.i("run", "position=" + position);
-        if (mViewPager == null || mViewPager.getAdapter().getCount() <= 0) return;
+        Log.i("run", "position1=" + position);
+        int count  = mViewPager.getAdapter().getCount();
+        if (mViewPager == null || count <= 0) return;
         position++;
-        if (position >= mViewPager.getAdapter().getCount()) {
+        if (position >= count) {
             position = 0;
         }
-        Log.i("run", "position=" + position);
-        mViewPager.setCurrentItem(position);
+        Log.i("run", "position2=" + position);
+        mViewPager.setCurrentItem(position%count);
         invalidate();
-
     }
 
     @Override
@@ -137,6 +134,8 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
     }
 
     private void startLoop() {
+        if(!mAuto ||mPause)return;
+        if(mScheduledExecutorService!=null)return;
         mScheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         mScheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
@@ -146,8 +145,16 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
                     Log.i("run", "" + new Date().toString());
                 }
             }
-        }, 0, 3, TimeUnit.SECONDS);
+        }, 0, 10, TimeUnit.SECONDS);
 
+    }
+
+    private void stopLoop() {
+        if (mScheduledExecutorService != null && !mScheduledExecutorService.isShutdown()) {
+            mScheduledExecutorService.shutdown();
+            mScheduledExecutorService = null;
+            mPause = true;
+        }
     }
 
     private void init() {
@@ -174,31 +181,11 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
         }
         mViewPager = viewPager;
         mViewPager.addOnPageChangeListener(this);
-        mViewPager.setOnTouchListener(new OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                switch (motionEvent.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        mPause = true;
-                        break;
-                    case MotionEvent.ACTION_UP:
-                    case MotionEvent.ACTION_CANCEL:
-                        mPause = false;
-                        break;
-                }
-                if (mOnTouchListener != null && !mOnTouchListener.onTouch(view, motionEvent)) {
-                    return false;
-                }
-                return true;
-            }
-        });
+
         postInvalidate();
 
     }
 
-    public void setViewPagerOnTouchListener(OnTouchListener listener) {
-        this.mOnTouchListener = listener;
-    }
 
     @Override
     public void setOnPageChangeListener(ViewPager.OnPageChangeListener listener) {
@@ -357,11 +344,21 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if (mScheduledExecutorService != null) {
-            mScheduledExecutorService.shutdown();
-            mScheduledExecutorService = null;
+        stopLoop();
+    }
+
+    @Override
+    protected void onWindowVisibilityChanged(int visibility) {
+        super.onWindowVisibilityChanged(visibility);
+        Log.i("run", "v=" + visibility);
+        if (View.VISIBLE == visibility) {
+            mPause = false;
+           startLoop();
+        } else if (View.INVISIBLE == visibility || View.GONE == visibility) {
+            stopLoop();
         }
     }
+
 
     protected abstract void drawItem(Canvas canvas, Paint defaultIndicatorPaint, int left, int top, int right, int bottom);
 
