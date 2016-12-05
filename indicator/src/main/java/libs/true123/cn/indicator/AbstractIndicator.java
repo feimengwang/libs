@@ -2,6 +2,7 @@ package libs.true123.cn.indicator;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -13,11 +14,9 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -34,22 +33,22 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
 
 
     ViewPager mViewPager = null;
-
     ViewPager.OnPageChangeListener mListener = null;
     int position = 0;
-
-    int mRadius = 20;
-    int mDistance = 0;
-
+    float mRadius = 0;
     Paint defaultIndicatorPaint = null;
     Paint movingIndicatorPaint = null;
     float positionOffset = 0f;
-
+    int mColor;
+    int mSelectedColor;
+    int mStrokeWidth;
+    int mTextSize;
     boolean mAuto = false;
     boolean mPause = false;
     int mOrientation = HORIZONTAL;
     boolean hasText = false;
-
+    private long mPeriod = 3;
+    private TimeUnit mTimeUnit = TimeUnit.SECONDS;
     private Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message msg) {
@@ -57,16 +56,15 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
         }
     };
     private ScheduledExecutorService mScheduledExecutorService;
+
     private void updatePosition() {
-        Log.i("run", "position1=" + position);
-        int count  = mViewPager.getAdapter().getCount();
+        int count = mViewPager.getAdapter().getCount();
         if (mViewPager == null || count <= 0) return;
         position++;
         if (position >= count) {
             position = 0;
         }
-        Log.i("run", "position2=" + position);
-        mViewPager.setCurrentItem(position%count);
+        mViewPager.setCurrentItem(position % count);
         invalidate();
     }
 
@@ -77,16 +75,13 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
-        Log.i("run", "action=" + event.getAction());
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mPause = true;
-                Log.i("run", "action1=" + mPause);
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 mPause = false;
-                Log.i("run", "action2=" + mPause);
                 break;
         }
         return super.dispatchTouchEvent(event);
@@ -95,22 +90,41 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public AbstractIndicator(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
-        init();
+        init(context, attrs, defStyleAttr);
     }
 
     public AbstractIndicator(Context context) {
         super(context);
-        init();
+        init(context, null, 0);
     }
 
     public AbstractIndicator(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init();
+        init(context, attrs, 0);
     }
 
     public AbstractIndicator(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+        init(context, attrs, defStyleAttr);
+    }
+
+    private void init(Context context, AttributeSet attrs, int defStyleAttr) {
+        TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.AbstractIndicator);
+        mAuto = typedArray.getBoolean(R.styleable.AbstractIndicator_isAuto, false);
+        mColor = typedArray.getColor(R.styleable.AbstractIndicator_color, getResources().getColor(R.color.white));
+        mSelectedColor = typedArray.getColor(R.styleable.AbstractIndicator_selectedColor,getResources().getColor(R.color.orange));
+        mRadius = typedArray.getDimension(R.styleable.AbstractIndicator_raduis,20f);
+        mStrokeWidth = (int) typedArray.getDimension(R.styleable.AbstractIndicator_strokeWidth,10);
+        mTextSize = (int) typedArray.getDimension(R.styleable.AbstractIndicator_textSize,22);
+        typedArray.recycle();
+        defaultIndicatorPaint = new Paint();
+        defaultIndicatorPaint.setAntiAlias(true);
+        defaultIndicatorPaint.setStrokeWidth(mStrokeWidth);
+        defaultIndicatorPaint.setColor(mColor);
+        movingIndicatorPaint = new Paint();
+        movingIndicatorPaint.setAntiAlias(true);
+        movingIndicatorPaint.setStrokeWidth(mStrokeWidth);
+        movingIndicatorPaint.setColor(mSelectedColor);
     }
 
     public AbstractIndicator setOrientation(@HostTypeChecker int orientation) {
@@ -133,19 +147,27 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
         return this;
     }
 
+    private void setPeriod(long period, TimeUnit unit) {
+        if (period > 0) {
+            mPeriod = period;
+        }
+        if (unit != null) {
+            mTimeUnit = unit;
+        }
+    }
+
     private void startLoop() {
-        if(!mAuto ||mPause)return;
-        if(mScheduledExecutorService!=null)return;
+        if (!mAuto || mPause) return;
+        if (mScheduledExecutorService != null) return;
         mScheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         mScheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 if (!mPause) {
                     mHandler.obtainMessage().sendToTarget();
-                    Log.i("run", "" + new Date().toString());
                 }
             }
-        }, 0, 10, TimeUnit.SECONDS);
+        }, 0, mPeriod, mTimeUnit);
 
     }
 
@@ -157,17 +179,6 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
         }
     }
 
-    private void init() {
-        defaultIndicatorPaint = new Paint();
-        defaultIndicatorPaint.setAntiAlias(true);
-        defaultIndicatorPaint.setStrokeWidth(10);
-        defaultIndicatorPaint.setColor(getResources().getColor(R.color.white));
-        movingIndicatorPaint = new Paint();
-        movingIndicatorPaint.setAntiAlias(true);
-        movingIndicatorPaint.setStrokeWidth(10);
-        movingIndicatorPaint.setColor(getResources().getColor(R.color.orange));
-        mDistance = mRadius;
-    }
 
     @Override
     public void setItemPosition(int position) {
@@ -183,7 +194,6 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
         mViewPager.addOnPageChangeListener(this);
 
         postInvalidate();
-
     }
 
 
@@ -235,7 +245,7 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
         if (mode == MeasureSpec.EXACTLY) {
             result = size;
         } else {
-            result = 2 * mRadius + getPaddingLeft() + getPaddingRight();
+            result = (int) (2 * mRadius + getPaddingLeft() + getPaddingRight());
             if (mode == MeasureSpec.AT_MOST) {
                 result = Math.min(result, size);
             }
@@ -252,7 +262,7 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
             result = size;
         } else {
             int pageCount = mViewPager.getAdapter().getCount();
-            result = getPaddingLeft() + getPaddingRight() + (2 * mRadius) * pageCount + mDistance * (pageCount - 1);
+            result = (int) (getPaddingLeft() + getPaddingRight() + (2 * mRadius) * pageCount + mRadius * (pageCount - 1));
             if (mode == MeasureSpec.AT_MOST) {
                 result = Math.min(result, size);
             }
@@ -288,14 +298,14 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
         if (count <= 0) {
             return;
         }
-        int left = (getMeasuredWidth() - (mRadius * 2 * count + mDistance * (count - 1))) / 2;
-        int top = (getMeasuredHeight() - 2 * mRadius) / 2;
+        int left = (int) ((getMeasuredWidth() - (mRadius * 2 * count + mRadius * (count - 1))) / 2);
+        int top = (int) ((getMeasuredHeight() - 2 * mRadius) / 2);
         if (mOrientation == VERTICAL) {
-            top = (getMeasuredHeight() - (mRadius * 2 * count + mDistance * (count - 1))) / 2;
-            left = (getMeasuredWidth() - 2 * mRadius) / 2;
+            top = (int) ((getMeasuredHeight() - (mRadius * 2 * count + mRadius * (count - 1))) / 2);
+            left = (int) ((getMeasuredWidth() - 2 * mRadius) / 2);
         }
         if (mOrientation == HORIZONTAL && hasText) {
-            left = getMeasuredWidth() - (2 * mRadius + mDistance) * (count + 1) - getPaddingRight();
+            left = (int) (getMeasuredWidth() - (2 * mRadius + mRadius) * (count + 1) - getPaddingRight());
             drawText(canvas, left - getPaddingLeft());
         }
         drawIndicator(canvas, top, left);
@@ -306,7 +316,7 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
         CharSequence title = mViewPager.getAdapter().getPageTitle(position);
         if (title != null && !"".equals(title.toString())) {
             Paint p = new Paint();
-            p.setTextSize(DisplayUtil.sp2px(getContext(), 22));
+            p.setTextSize(DisplayUtil.sp2px(getContext(), mTextSize));
             p.setColor(Color.BLUE);
             String sTitle = TextUtil.getClippedText(title.toString(), length, p);
             canvas.drawText(sTitle, getPaddingLeft(), TextUtil.textBaseLine(p, getMeasuredHeight()), p);
@@ -315,13 +325,13 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
 
     private void drawMovingIndicator(Canvas canvas, int top, int left) {
         if (positionOffset >= 0f && positionOffset <= 1f) {
-            float distanceForFirst = (mRadius * 2 + mDistance) * ((float) position + positionOffset);
+            float distanceForFirst = (mRadius * 2 + mRadius) * ((float) position + positionOffset);
             if (mOrientation == HORIZONTAL) {
                 left += distanceForFirst;
             } else {
                 top += distanceForFirst;
             }
-            drawItem(canvas, movingIndicatorPaint, left, top, left + 2 * mRadius, top + 2 * mRadius);
+            drawItem(canvas, movingIndicatorPaint, left, top, (int)(left + 2 * mRadius), (int)(top + 2 * mRadius));
         }
     }
 
@@ -330,13 +340,13 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
         int right = 0;
         int bottom = 0;
         for (int i = 0; i < count; i++) {
-            right = left + (mRadius * 2);
-            bottom = top + mRadius * 2;
+            right = (int) (left + (mRadius * 2));
+            bottom = (int) (top + mRadius * 2);
             drawItem(canvas, defaultIndicatorPaint, left, top, right, bottom);
             if (mOrientation == HORIZONTAL) {
-                left = right + mDistance;
+                left = (int) (right + mRadius);
             } else {
-                top = bottom + mDistance;
+                top = (int) (bottom + mRadius);
             }
         }
     }
@@ -350,10 +360,9 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
     @Override
     protected void onWindowVisibilityChanged(int visibility) {
         super.onWindowVisibilityChanged(visibility);
-        Log.i("run", "v=" + visibility);
         if (View.VISIBLE == visibility) {
             mPause = false;
-           startLoop();
+            startLoop();
         } else if (View.INVISIBLE == visibility || View.GONE == visibility) {
             stopLoop();
         }

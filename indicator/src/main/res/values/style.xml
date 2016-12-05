@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="AbstractIndicator">
+        <attr name="color" format="color|reference" />
+        <attr name="selectedColor" format="color|reference" />
+        <attr name="isAuto" format="enum" />
+        <attr name="raduis" format="dimension"/>
+        <attr name="strokeWidth" format="dimension"/>
+        <attr name="textSize" format="dimension"/>
+    </declare-styleable>
+    <attr name="isAuto">
+        <enum name="true" value="1" />
+        <enum name="false" value="0" />
+    </attr>
+</resources>
