@@ -110,12 +110,18 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
 
     private void init(Context context, AttributeSet attrs, int defStyleAttr) {
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.AbstractIndicator);
-        mAuto = typedArray.getBoolean(R.styleable.AbstractIndicator_isAuto, false);
-        mColor = typedArray.getColor(R.styleable.AbstractIndicator_color, getResources().getColor(R.color.white));
-        mSelectedColor = typedArray.getColor(R.styleable.AbstractIndicator_selectedColor,getResources().getColor(R.color.orange));
-        mRadius = typedArray.getDimension(R.styleable.AbstractIndicator_raduis,20f);
-        mStrokeWidth = (int) typedArray.getDimension(R.styleable.AbstractIndicator_strokeWidth,10);
-        mTextSize = (int) typedArray.getDimension(R.styleable.AbstractIndicator_textSize,22);
+        mAuto = typedArray.getInt(R.styleable.AbstractIndicator_isAuto, 0) == 0 ? false : true;
+        mColor = typedArray.getColor(R.styleable.AbstractIndicator_iDefaultColor, -1);
+        if (mColor == -1) {
+            mColor = typedArray.getResourceId(R.styleable.AbstractIndicator_iDefaultColor, R.color.white);
+        }
+        mSelectedColor = typedArray.getColor(R.styleable.AbstractIndicator_iSelectedColor, -1);
+        if (mSelectedColor == -1) {
+            mSelectedColor = typedArray.getColor(R.styleable.AbstractIndicator_iSelectedColor, getResources().getColor(R.color.orange));
+        }
+        mRadius = typedArray.getDimension(R.styleable.AbstractIndicator_iRaduis, 20f);
+        mStrokeWidth = (int) typedArray.getDimension(R.styleable.AbstractIndicator_iStrokeWidth, 10);
+        mTextSize = (int) typedArray.getDimension(R.styleable.AbstractIndicator_iTextSize, 22);
         typedArray.recycle();
         defaultIndicatorPaint = new Paint();
         defaultIndicatorPaint.setAntiAlias(true);
@@ -331,7 +337,7 @@ public abstract class AbstractIndicator extends View implements PageIndicator {
             } else {
                 top += distanceForFirst;
             }
-            drawItem(canvas, movingIndicatorPaint, left, top, (int)(left + 2 * mRadius), (int)(top + 2 * mRadius));
+            drawItem(canvas, movingIndicatorPaint, left, top, (int) (left + 2 * mRadius), (int) (top + 2 * mRadius));
         }
     }
 
